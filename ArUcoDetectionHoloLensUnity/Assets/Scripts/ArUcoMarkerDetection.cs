@@ -18,6 +18,7 @@ using UnityEngine.UI;
 using UnityEngine.XR.WSA;
 using UnityEngine.XR.WSA.Input;
 using System.Threading;
+using UnityEngine.Events;
 
 
 // App permissions, modify the appx file for research mode streams
@@ -26,6 +27,11 @@ using System.Threading;
 // Reimplement as list loop structure... 
 namespace ArUcoDetectionHoloLensUnity
 {
+    // In order to use custom event types we need to subclass them and
+    // mark them as serializable. 
+    [Serializable]
+    public class MarkerDetectionEvent : UnityEvent<int, Vector3, Quaternion> { }
+
     // Using the hololens for cv .winmd file for runtime support
     // Build HoloLensForCV c++ project (x86) and copy all output files
     // to Assets->Plugins->x86
@@ -45,11 +51,6 @@ namespace ArUcoDetectionHoloLensUnity
         public float markerSize;
 
         /// <summary>
-        /// Game object for to use for marker instantiation
-        /// </summary>
-        public GameObject markerGo;
-
-        /// <summary>
         /// GameObject to show video streams.
         /// </summary>
         public GameObject pvGo;
@@ -65,10 +66,6 @@ namespace ArUcoDetectionHoloLensUnity
         // PV
         //private Texture2D _pvTexture;
 
-        /// <summary>
-        /// List of prefab instances of detected aruco markers.
-        /// </summary>
-        private List<GameObject> _markerGOs;
         private bool _mediaFrameSourceGroupsStarted = false;
 
 #if ENABLE_WINMD_SUPPORT
@@ -100,6 +97,11 @@ namespace ArUcoDetectionHoloLensUnity
         // Gesture handler
         GestureRecognizer _gestureRecognizer;
 
+        // Events
+        public UnityEvent OnDetectionStart;
+        public UnityEvent OnDetectionEnd;
+        public MarkerDetectionEvent OnMarkerDetected;
+
         #region UnityMethods
 
         // Use this for initialization
@@ -118,8 +120,10 @@ namespace ArUcoDetectionHoloLensUnity
             // HoloLens media frame source groups.
             StartCoroutine(DelayCoroutine());
 
-            // Initialize list of marker game objects
-            _markerGOs = new List<GameObject>();
+            // Make sure the event handlers are initialized.
+            if (OnDetectionStart == null) OnDetectionStart = new UnityEvent();
+            if (OnDetectionEnd == null) OnDetectionEnd = new UnityEvent();
+            if (OnMarkerDetected == null) OnMarkerDetected = new MarkerDetectionEvent();
         }
 
         /// <summary>
@@ -233,16 +237,6 @@ namespace ArUcoDetectionHoloLensUnity
                 return;
             }
 
-            // Destroy all marker gameobject instances from prior frames
-            // otherwise game objects will pile on top of marker
-            if (_markerGOs.Count != 0)
-            {
-                foreach (var marker in _markerGOs)
-                {
-                    Destroy(marker);
-                }
-            }
-
             // Get latest sensor frames
             // Photo video
             //SensorFrame latestPvCameraFrame =
@@ -260,6 +254,9 @@ namespace ArUcoDetectionHoloLensUnity
             //detectedArUcoMarkers = 
             //    _arUcoMarkerTracker.DetectArUcoMarkersInFrame(latestPvCameraFrame);
 
+            // Notify the listeners that we're starting the detection.
+            OnDetectionStart.Invoke();
+
             // If we detect a marker, display
             if (detectedArUcoMarkers.Count != 0)
             {
@@ -275,18 +272,18 @@ namespace ArUcoDetectionHoloLensUnity
                     // Use camera to world transform to get world pose of marker
                     Matrix4x4 transformUnityWorld = cameraToWorldUnity * transformUnityCamera;
 
-                    // Instantiate game object marker in world coordinates
-                    var thisGo = Instantiate(
-                        markerGo,
+                    // Notify the listeners that we've detected a marker.
+                    OnMarkerDetected.Invoke(
+                        detectedMarker.Id,
                         CvUtils.GetVectorFromMatrix(transformUnityWorld),
-                        CvUtils.GetQuatFromMatrix(transformUnityWorld)) as GameObject;
-
-                    // Scale the game object to the size of the markers
-                    thisGo.transform.localScale = new Vector3(markerSize, markerSize, markerSize);
-                    _markerGOs.Add(thisGo);
+                        CvUtils.GetQuatFromMatrix(transformUnityWorld)
+                    );
                 }
             }
             
+            // Notify the listeners that we've finished our detection.
+            OnDetectionEnd.Invoke();
+
             // Remove viewing of frame for now. Getting memory leaks
             // from passing the SensorFrame class object across the 
             // WinRT ABI... 

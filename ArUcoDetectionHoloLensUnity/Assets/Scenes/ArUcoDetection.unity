@@ -230,6 +230,7 @@ GameObject:
   m_Component:
   - component: {fileID: 805832263}
   - component: {fileID: 805832264}
+  - component: {fileID: 805832265}
   m_Layer: 0
   m_Name: Script Holder
   m_TagString: Untagged
@@ -268,9 +269,53 @@ MonoBehaviour:
   sensorTypePv: 0
   arUcoDictionaryName: 8
   markerSize: 0.08
-  markerGo: {fileID: 6938460688606143788, guid: 2e5d73686abb4b440940c1d00e105576,
-    type: 3}
   pvGo: {fileID: 1810004528}
+  OnDetectionStart:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 805832265}
+        m_MethodName: RemoveMarkers
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  OnDetectionEnd:
+    m_PersistentCalls:
+      m_Calls: []
+  OnMarkerDetected:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 805832265}
+        m_MethodName: AddMarker
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &805832265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 805832262}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f015132adea6e014680c45b2e89390dd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MarkerPrefab: {fileID: 6938460688606143788, guid: 2e5d73686abb4b440940c1d00e105576,
+    type: 3}
+  MarkerPrefabScale: 0.08
 --- !u!1 &834886952
 GameObject:
   m_ObjectHideFlags: 0
